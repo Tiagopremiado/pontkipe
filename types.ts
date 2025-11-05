@@ -1,24 +1,24 @@
-
-// Fix: Removed self-import of 'Unit' which conflicted with the local declaration.
+// Fix: Define the types for the application.
 export type Unit = 'Pelotas' | 'Pedro Osório';
 
 export interface Team {
   id: string;
-  unidade: Unit;
   nome: string;
+  unidade: Unit;
   pontos: number;
   descricao: string;
   foPositivos: string[];
   foNegativos: string[];
+  fotoUrl?: string;
 }
 
 export interface Confronto {
   id: string;
-  unidade: Unit;
   team1Id: string;
   team2Id: string;
   team1Score: number;
   team2Score: number;
-  date: string;
+  date: string; // YYYY-MM-DD
   description: string;
+  unidade: Unit;
 }

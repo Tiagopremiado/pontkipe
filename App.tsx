@@ -1,75 +1,101 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Team, Confronto } from './types';
-import { INITIAL_TEAMS, INITIAL_CONFRONTOS } from './constants';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import PublicView from './components/PublicView';
 import AdminPanel from './components/AdminPanel';
+import PublicView from './components/PublicView';
 
 const App: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [confrontos, setConfrontos] = useState<Confronto[]>([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const storedTeams = localStorage.getItem('fopeCia126Teams');
-      setTeams(storedTeams ? JSON.parse(storedTeams) : INITIAL_TEAMS);
-      
-      const storedConfrontos = localStorage.getItem('fopeCia126Confrontos');
-      setConfrontos(storedConfrontos ? JSON.parse(storedConfrontos) : INITIAL_CONFRONTOS);
+    const loadData = async () => {
+        try {
+            const storedTeams = localStorage.getItem('teams');
+            const storedConfrontos = localStorage.getItem('confrontos');
+            const storedAdmin = sessionStorage.getItem('isAdmin');
 
-    } catch (error) {
-      console.error("Failed to parse data from localStorage", error);
-      setTeams(INITIAL_TEAMS);
-      setConfrontos(INITIAL_CONFRONTOS);
-    }
+            if (storedTeams && storedConfrontos) {
+                setTeams(JSON.parse(storedTeams));
+                setConfrontos(JSON.parse(storedConfrontos));
+            } else {
+                const response = await fetch('/db.json');
+                const data = await response.json();
+                setTeams(data.teams);
+                setConfrontos(data.confrontos);
+            }
+            if(storedAdmin === 'true') {
+                setIsAdmin(true);
+            }
+        } catch (error) {
+            console.error("Failed to load data", error);
+            // Fallback to empty state in case of error
+            setTeams([]);
+            setConfrontos([]);
+        } finally {
+            setIsLoaded(true);
+        }
+    };
+    
+    loadData();
   }, []);
 
   useEffect(() => {
-    if(teams.length > 0) {
-      localStorage.setItem('fopeCia126Teams', JSON.stringify(teams));
+    if(isLoaded){
+        try {
+            localStorage.setItem('teams', JSON.stringify(teams));
+            localStorage.setItem('confrontos', JSON.stringify(confrontos));
+        } catch (error) {
+            console.error("Failed to save data to storage", error);
+        }
     }
-  }, [teams]);
+  }, [teams, confrontos, isLoaded]);
 
-  useEffect(() => {
-    if(confrontos.length > 0) {
-      localStorage.setItem('fopeCia126Confrontos', JSON.stringify(confrontos));
-    }
-  }, [confrontos]);
+  const handleAdminAccess = () => {
+    setIsAdmin(true);
+    sessionStorage.setItem('isAdmin', 'true');
+  };
+
+  const handleLogout = () => {
+    setIsAdmin(false);
+    sessionStorage.removeItem('isAdmin');
+  };
   
-  const handleAdminAccess = useCallback(() => setIsAuthenticated(true), []);
-  const handleLogout = useCallback(() => setIsAuthenticated(false), []);
-
-  const addTeam = useCallback((teamData: Omit<Team, 'id'>) => {
-    setTeams(prev => [...prev, { ...teamData, id: new Date().toISOString() }]);
-  }, []);
-
-  const updateTeam = useCallback((updatedTeam: Team) => {
-    setTeams(prev => prev.map(t => (t.id === updatedTeam.id ? updatedTeam : t)));
-  }, []);
-
-  const deleteTeam = useCallback((id: string) => {
+  // Team CRUD
+  const addTeam = (team: Omit<Team, 'id'>) => {
+    setTeams(prev => [...prev, { ...team, id: new Date().toISOString() }]);
+  };
+  const updateTeam = (updatedTeam: Team) => {
+    setTeams(prev => prev.map(t => t.id === updatedTeam.id ? updatedTeam : t));
+  };
+  const deleteTeam = (id: string) => {
     setTeams(prev => prev.filter(t => t.id !== id));
-  }, []);
+    setConfrontos(prev => prev.filter(c => c.team1Id !== id && c.team2Id !== id));
+  };
 
-  const addConfronto = useCallback((confrontoData: Omit<Confronto, 'id'>) => {
-    setConfrontos(prev => [...prev, { ...confrontoData, id: new Date().toISOString() }]);
-  }, []);
-
-  const updateConfronto = useCallback((updatedConfronto: Confronto) => {
-    setConfrontos(prev => prev.map(c => (c.id === updatedConfronto.id ? updatedConfronto : c)));
-  }, []);
-
-  const deleteConfronto = useCallback((id: string) => {
+  // Confronto CRUD
+  const addConfronto = (confronto: Omit<Confronto, 'id'>) => {
+    setConfrontos(prev => [...prev, { ...confronto, id: new Date().toISOString() }]);
+  };
+  const updateConfronto = (updatedConfronto: Confronto) => {
+    setConfrontos(prev => prev.map(c => c.id === updatedConfronto.id ? updatedConfronto : c));
+  };
+  const deleteConfronto = (id: string) => {
     setConfrontos(prev => prev.filter(c => c.id !== id));
-  }, []);
+  };
+
+  if(!isLoaded) {
+    return <div className="bg-gray-900 min-h-screen flex items-center justify-center text-white text-xl">Carregando dados...</div>
+  }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-900">
+    <div className="bg-gray-900 text-white min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow">
-        {isAuthenticated ? (
+        {isAdmin ? (
           <AdminPanel 
             teams={teams}
             confrontos={confrontos}

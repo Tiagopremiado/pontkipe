@@ -1,0 +1,76 @@
+{
+  "teams": [
+    {
+      "id": "t1",
+      "nome": "Equipe Alpha",
+      "unidade": "Pelotas",
+      "pontos": 150,
+      "descricao": "Focados em estratégia e comunicação.",
+      "foPositivos": ["Comunicação Clara", "Liderança"],
+      "foNegativos": ["Gerenciamento de tempo"],
+      "fotoUrl": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
+    },
+    {
+      "id": "t2",
+      "nome": "Equipe Bravo",
+      "unidade": "Pelotas",
+      "pontos": 125,
+      "descricao": "Especialistas em resolver problemas complexos.",
+      "foPositivos": ["Resiliência"],
+      "foNegativos": ["Organização", "Foco"],
+      "fotoUrl": "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
+    },
+    {
+      "id": "t3",
+      "nome": "Equipe Charlie",
+      "unidade": "Pedro Osório",
+      "pontos": 180,
+      "descricao": "Alta performance sob pressão.",
+      "foPositivos": ["Trabalho em equipe", "Agilidade"],
+      "foNegativos": [],
+      "fotoUrl": "https://images.unsplash.com/photo-1604328698692-f76ea9498e7b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
+    },
+    {
+      "id": "t4",
+      "nome": "Equipe Delta",
+      "unidade": "Pedro Osório",
+      "pontos": 95,
+      "descricao": "Criatividade e inovação são seus pontos fortes.",
+      "foPositivos": ["Inovação"],
+      "foNegativos": ["Comunicação"],
+      "fotoUrl": "https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
+    }
+  ],
+  "confrontos": [
+    {
+      "id": "c1",
+      "team1Id": "t1",
+      "team2Id": "t2",
+      "team1Score": 10,
+      "team2Score": 5,
+      "date": "2024-07-20",
+      "description": "Desafio de Lógica",
+      "unidade": "Pelotas"
+    },
+    {
+      "id": "c2",
+      "team1Id": "t3",
+      "team2Id": "t4",
+      "team1Score": 15,
+      "team2Score": 15,
+      "date": "2024-07-21",
+      "description": "Prova de Resistência",
+      "unidade": "Pedro Osório"
+    },
+    {
+      "id": "c3",
+      "team1Id": "t1",
+      "team2Id": "t3",
+      "team1Score": 8,
+      "team2Score": 12,
+      "date": "2024-07-23",
+      "description": "Desafio de Habilidade Mista",
+      "unidade": "Pelotas"
+    }
+  ]
+}

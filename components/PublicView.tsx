@@ -1,93 +1,149 @@
 import React, { useState, useMemo } from 'react';
-import { Team, Unit, Confronto } from '../types';
+import { Team, Confronto } from '../types';
 import TeamCard from './TeamCard';
 import ConfrontoCard from './ConfrontoCard';
+import HomeView from './HomeView';
+import UnitRankingCard from './UnitRankingCard';
 
 interface PublicViewProps {
   teams: Team[];
   confrontos: Confronto[];
 }
 
-type ViewType = Unit | 'Classificação Geral' | 'Contra-Equipes';
+type PublicViewTab = 'Início' | 'Ranking' | 'Confrontos';
+type RankingSubTab = 'Pelotas' | 'Pedro Osório' | 'Rank das Unidades';
+type ConfrontosSubTab = 'Pelotas' | 'Pedro Osório' | 'Contra-Unidades';
 
 const PublicView: React.FC<PublicViewProps> = ({ teams, confrontos }) => {
-  const [activeView, setActiveView] = useState<ViewType>('Classificação Geral');
+  const [activeTab, setActiveTab] = useState<PublicViewTab>('Início');
+  const [activeRankingTab, setActiveRankingTab] = useState<RankingSubTab>('Pelotas');
+  const [activeConfrontosTab, setActiveConfrontosTab] = useState<ConfrontosSubTab>('Pelotas');
 
-  const filteredAndSortedTeams = useMemo(() => {
-    let newTeams = [...teams];
-    if (activeView === 'Classificação Geral') {
-      return newTeams.sort((a, b) => b.pontos - a.pontos);
+  const teamsByUnit = useMemo(() => {
+    const pelotas = teams.filter(t => t.unidade === 'Pelotas').sort((a, b) => b.pontos - a.pontos);
+    const pedroOsorio = teams.filter(t => t.unidade === 'Pedro Osório').sort((a, b) => b.pontos - a.pontos);
+    return { pelotas, pedroOsorio };
+  }, [teams]);
+
+  const unitScores = useMemo(() => {
+    const pelotasScore = teamsByUnit.pelotas.reduce((sum, team) => sum + team.pontos, 0);
+    const pedroOsorioScore = teamsByUnit.pedroOsorio.reduce((sum, team) => sum + team.pontos, 0);
+    return { pelotasScore, pedroOsorioScore };
+  }, [teamsByUnit]);
+
+  const confrontosByMatchup = useMemo(() => {
+    const getTeam = (id: string) => teams.find(t => t.id === id);
+    const sorted = [...confrontos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const pelotas = sorted.filter(c => getTeam(c.team1Id)?.unidade === 'Pelotas' && getTeam(c.team2Id)?.unidade === 'Pelotas');
+    const pedroOsorio = sorted.filter(c => getTeam(c.team1Id)?.unidade === 'Pedro Osório' && getTeam(c.team2Id)?.unidade === 'Pedro Osório');
+    const contraUnidades = sorted.filter(c => {
+        const t1 = getTeam(c.team1Id);
+        const t2 = getTeam(c.team2Id);
+        return t1 && t2 && t1.unidade !== t2.unidade;
+    });
+
+    return { pelotas, pedroOsorio, contraUnidades };
+  }, [confrontos, teams]);
+
+  const renderRankingContent = () => {
+    switch (activeRankingTab) {
+      case 'Pelotas':
+        return teamsByUnit.pelotas.length > 0 ? teamsByUnit.pelotas.map((team, index) => <TeamCard key={team.id} team={team} rank={index + 1} />) : <p className="text-center text-gray-400 col-span-full">Nenhuma equipe para esta unidade.</p>;
+      case 'Pedro Osório':
+        return teamsByUnit.pedroOsorio.length > 0 ? teamsByUnit.pedroOsorio.map((team, index) => <TeamCard key={team.id} team={team} rank={index + 1} />) : <p className="text-center text-gray-400 col-span-full">Nenhuma equipe para esta unidade.</p>;
+      case 'Rank das Unidades':
+        return <UnitRankingCard pelotasScore={unitScores.pelotasScore} pedroOsorioScore={unitScores.pedroOsorioScore} />;
     }
-    if (activeView === 'Pelotas' || activeView === 'Pedro Osório') {
-        return newTeams.filter(team => team.unidade === activeView);
+  };
+
+  const renderConfrontosContent = () => {
+    let confrontosToRender: Confronto[] = [];
+    switch (activeConfrontosTab) {
+        case 'Pelotas': confrontosToRender = confrontosByMatchup.pelotas; break;
+        case 'Pedro Osório': confrontosToRender = confrontosByMatchup.pedroOsorio; break;
+        case 'Contra-Unidades': confrontosToRender = confrontosByMatchup.contraUnidades; break;
     }
-    return [];
-  }, [teams, activeView]);
+    return confrontosToRender.length > 0 ? confrontosToRender.map(c => <ConfrontoCard key={c.id} confronto={c} teams={teams} />) : <p className="text-center text-gray-400 col-span-full">Nenhum confronto para esta categoria.</p>;
+  };
 
-  const sortedConfrontos = useMemo(() => {
-    return [...confrontos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [confrontos]);
-
-  const navButtons: ViewType[] = ['Classificação Geral', 'Pelotas', 'Pedro Osório', 'Contra-Equipes'];
+  const renderContent = () => {
+    switch(activeTab) {
+      case 'Início':
+        return <HomeView teams={teams} />;
+      case 'Ranking':
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {renderRankingContent()}
+          </div>
+        );
+      case 'Confrontos':
+        return (
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {renderConfrontosContent()}
+          </div>
+        );
+      default:
+        return null;
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center mb-8">
-            <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-              Bem-vindo à Dinâmica de Equipes da FOPE CIA 126!
-            </h2>
-            <p className="mt-4 text-lg text-gray-300">Acompanhe o desempenho e as observações de cada equipe.</p>
-        </div>
+      <div className="text-center mb-12">
+        <h2 className="text-4xl font-extrabold text-white tracking-tight sm:text-5xl">Dinâmica de Equipes</h2>
+        <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-400">Acompanhe a pontuação, os confrontos e o desenvolvimento das equipes.</p>
+      </div>
 
-      <div className="mb-8 p-1.5 bg-gray-800 rounded-lg flex flex-wrap justify-center gap-2">
-        {navButtons.map(view => (
+       <div className="mb-8 p-1.5 bg-gray-800 rounded-lg flex flex-col sm:flex-row justify-center gap-2 max-w-lg mx-auto">
+        {(['Início', 'Ranking', 'Confrontos'] as PublicViewTab[]).map(tab => (
           <button
-            key={view}
-            onClick={() => setActiveView(view)}
-            className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-300 ${
-              activeView === view
-                ? 'bg-emerald-600 text-white'
-                : 'text-gray-300 hover:bg-gray-700'
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-300 ${
+              activeTab === tab ? 'bg-emerald-600 text-white' : 'text-gray-300 hover:bg-gray-700'
             }`}
           >
-            {view}
+            {tab}
           </button>
         ))}
       </div>
 
-      {activeView !== 'Contra-Equipes' && (
-        <>
-            {filteredAndSortedTeams.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {filteredAndSortedTeams.map((team, index) => (
-                        <TeamCard 
-                            key={team.id} 
-                            team={team} 
-                            rank={activeView === 'Classificação Geral' ? index + 1 : undefined} 
-                        />
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-16">
-                    <p className="text-gray-400 text-xl">Nenhuma equipe encontrada para esta unidade.</p>
-                </div>
-            )}
-        </>
+      {activeTab === 'Ranking' && (
+        <div className="mb-8 p-1.5 bg-gray-800 rounded-lg flex flex-col sm:flex-row justify-center gap-2 max-w-md mx-auto">
+            {(['Pelotas', 'Pedro Osório', 'Rank das Unidades'] as RankingSubTab[]).map(subTab => (
+            <button
+                key={subTab}
+                onClick={() => setActiveRankingTab(subTab)}
+                className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-300 ${
+                activeRankingTab === subTab ? 'bg-emerald-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+                }`}
+            >
+                {subTab}
+            </button>
+            ))}
+        </div>
       )}
 
-      {activeView === 'Contra-Equipes' && (
-         <div className="space-y-6">
-            {sortedConfrontos.length > 0 ? (
-                sortedConfrontos.map(confronto => (
-                    <ConfrontoCard key={confronto.id} confronto={confronto} teams={teams} />
-                ))
-            ) : (
-                <div className="text-center py-16">
-                    <p className="text-gray-400 text-xl">Nenhum confronto registrado ainda.</p>
-                </div>
-            )}
-         </div>
+      {activeTab === 'Confrontos' && (
+        <div className="mb-8 p-1.5 bg-gray-800 rounded-lg flex flex-col sm:flex-row justify-center gap-2 max-w-md mx-auto">
+            {(['Pelotas', 'Pedro Osório', 'Contra-Unidades'] as ConfrontosSubTab[]).map(subTab => (
+            <button
+                key={subTab}
+                onClick={() => setActiveConfrontosTab(subTab)}
+                className={`w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-300 ${
+                activeConfrontosTab === subTab ? 'bg-emerald-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+                }`}
+            >
+                {subTab}
+            </button>
+            ))}
+        </div>
       )}
+      
+      <div>
+        {renderContent()}
+      </div>
     </div>
   );
 };
